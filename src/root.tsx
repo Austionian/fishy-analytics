@@ -21,10 +21,20 @@ export default component$(() => {
       <head>
         <meta charSet="utf-8" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Flow+Rounded&family=Moirai+One&family=Monofett&family=Rubik+Glitch&family=Rubik+Puddles&display=swap"
+          rel="stylesheet"
+        />
         <RouterHead />
         <ServiceWorkerRegister />
       </head>
-      <body lang="en">
+      <body lang="en" class="font-flow">
         <RouterOutlet />
       </body>
     </QwikCityProvider>
