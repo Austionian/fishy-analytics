@@ -1,8 +1,8 @@
 import { component$, Slot } from "@builder.io/qwik";
-import { routeLoader$ } from "@builder.io/qwik-city";
+// import { routeLoader$ } from "@builder.io/qwik-city";
 
 // import Header from "~/components/header/header";
-// import Footer from "~/components/footer/footer";
+// import Footer from "~/components/starter/footer/footer";
 
 // export const onRequest: RequestHandler = async ({
 //   cookie,
@@ -41,13 +41,11 @@ import { routeLoader$ } from "@builder.io/qwik-city";
 export default component$(() => {
   return (
     <div class="min-h-screen bg-gray-900 from-gray-900/80 to-gray-900/80">
-      {/*<Header />*/}
       <main class="pt-10 min-h-full">
         <div class="h-full">
           <Slot />
         </div>
       </main>
-      {/*<Footer />*/}
     </div>
   );
 });
