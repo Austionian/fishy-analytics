@@ -40,10 +40,10 @@ import { routeLoader$ } from "@builder.io/qwik-city";
 
 export default component$(() => {
   return (
-    <div class="min-h-screen bg-gradient-to-b from-teal-50 to-white dark:bg-gray-900 dark:from-gray-900/80 dark:to-gray-900/80">
+    <div class="min-h-screen bg-gray-900 from-gray-900/80 to-gray-900/80">
       {/*<Header />*/}
       <main class="pt-10 min-h-full">
-        <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+        <div class="h-full">
           <Slot />
         </div>
       </main>

@@ -453,6 +453,9 @@ export default component$(() => {
             </svg>
           </button>
 
+          <div>
+            <h1 class="text-2xl font-mono text-white">Fishy Analytics</h1>
+          </div>
           <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <form class="flex flex-1" action="#" method="GET">
               <label for="search-field" class="sr-only">
