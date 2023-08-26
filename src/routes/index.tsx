@@ -1,12 +1,57 @@
 import { component$ } from "@builder.io/qwik";
-import type { DocumentHead } from "@builder.io/qwik-city";
+import { routeLoader$, type DocumentHead } from "@builder.io/qwik-city";
 
 // import Counter from "~/components/starter/counter/counter";
 // import Hero from "~/components/starter/hero/hero";
 // import Infobox from "~/components/starter/infobox/infobox";
 // import Starter from "~/components/starter/next-steps/next-steps";
 
+type EnvGetter = {
+  get(key: string): string | undefined;
+};
+
+/**
+ * Depending on the current env, returns the api service's domain origin
+ * and its api key.
+ */
+export const getFetchDetails = (
+  env: EnvGetter,
+): { apiKey: string; domain: string } => {
+  if (import.meta.env.PROD) {
+    return {
+      apiKey: env.get("API_KEY") || "",
+      domain: env.get("API_DOMAIN") || "",
+    };
+  }
+  return {
+    apiKey: import.meta.env.VITE_API_KEY,
+    domain: import.meta.env.VITE_API_DOMAIN,
+  };
+};
+
+type Data = {
+  number_of_registered_users: number;
+  emails: string[];
+};
+
+export const useGetData = routeLoader$<Data>(async ({ env, cookie, query }) => {
+  let user_id = query.get("user_id");
+  if (!user_id) {
+    user_id = cookie.get("user_id")?.value || "";
+  }
+  const { apiKey, domain } = getFetchDetails(env);
+  const res = await fetch(`${domain}/v1/admin/analytics/`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      cookie: `user_id=${user_id}`,
+    },
+  });
+  cookie.set("user_id", user_id);
+  return res.json();
+});
+
 export default component$(() => {
+  const data = useGetData();
   return (
     <div>
       <div class="relative z-50 xl:hidden" role="dialog" aria-modal="true">
@@ -544,29 +589,28 @@ export default component$(() => {
 
             <div class="grid grid-cols-1 bg-gray-700/10 sm:grid-cols-2 lg:grid-cols-4">
               <div class="border-t border-white/5 py-6 px-4 sm:px-6 lg:px-8">
-                <p class="text-sm font-medium leading-6 text-gray-400">
-                  Number of deploys
+                <p class="font-sans text-sm font-medium leading-6 text-gray-400">
+                  Registered Users
                 </p>
                 <p class="mt-2 flex items-baseline gap-x-2">
-                  <span class="text-4xl font-semibold tracking-tight text-white">
-                    405
+                  <span class="font-mono text-4xl font-semibold tracking-tight text-white">
+                    {data.value.number_of_registered_users}
                   </span>
                 </p>
               </div>
               <div class="border-t border-white/5 py-6 px-4 sm:px-6 lg:px-8 sm:border-l">
-                <p class="text-sm font-medium leading-6 text-gray-400">
-                  Average deploy time
+                <p class="font-sans text-sm font-medium leading-6 text-gray-400">
+                  Current Active Users
                 </p>
                 <p class="mt-2 flex items-baseline gap-x-2">
                   <span class="text-4xl font-semibold tracking-tight text-white">
                     3.65
                   </span>
-                  <span class="text-sm text-gray-400">mins</span>
                 </p>
               </div>
               <div class="border-t border-white/5 py-6 px-4 sm:px-6 lg:px-8 lg:border-l">
-                <p class="text-sm font-medium leading-6 text-gray-400">
-                  Number of servers
+                <p class="font-mono text-sm font-medium leading-6 text-gray-400">
+                  New Users in the Last Month
                 </p>
                 <p class="mt-2 flex items-baseline gap-x-2">
                   <span class="text-4xl font-semibold tracking-tight text-white">
@@ -588,8 +632,8 @@ export default component$(() => {
           </header>
 
           <div class="border-t border-white/10 pt-11">
-            <h2 class="px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8">
-              Latest activity
+            <h2 class="font-sans px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8">
+              Users
             </h2>
             <table class="mt-6 w-full whitespace-nowrap text-left">
               <colgroup>
@@ -603,9 +647,9 @@ export default component$(() => {
                 <tr>
                   <th
                     scope="col"
-                    class="py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8"
+                    class="font-sans py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8"
                   >
-                    User
+                    Email
                   </th>
                   <th
                     scope="col"
@@ -633,46 +677,48 @@ export default component$(() => {
                   </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-white/5">
-                <tr>
-                  <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
-                    <div class="flex items-center gap-x-4">
-                      <div class="truncate text-sm font-medium leading-6 text-white">
-                        Michael Foster
+              <tbody class="font-mono divide-y divide-white/5">
+                {data.value.emails.map((email) => (
+                  <tr key={email}>
+                    <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
+                      <div class="flex items-center gap-x-4">
+                        <div class="truncate text-sm font-medium leading-6 text-white">
+                          {email}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
-                    <div class="flex gap-x-3">
-                      <div class="font-mono text-sm leading-6 text-gray-400">
-                        2d89f0c8
+                    </td>
+                    <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
+                      <div class="flex gap-x-3">
+                        <div class="font-mono text-sm leading-6 text-gray-400">
+                          2d89f0c8
+                        </div>
+                        <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-400/20">
+                          main
+                        </span>
                       </div>
-                      <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-400/20">
-                        main
-                      </span>
-                    </div>
-                  </td>
-                  <td class="py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20">
-                    <div class="flex items-center justify-end gap-x-2 sm:justify-start">
-                      <time
-                        class="text-gray-400 sm:hidden"
-                        dateTime="2023-01-23T11:00"
-                      >
-                        45 minutes ago
-                      </time>
-                      <div class="flex-none rounded-full p-1 text-green-400 bg-green-400/10">
-                        <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
+                    </td>
+                    <td class="py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20">
+                      <div class="flex items-center justify-end gap-x-2 sm:justify-start">
+                        <time
+                          class="text-gray-400 sm:hidden"
+                          dateTime="2023-01-23T11:00"
+                        >
+                          45 minutes ago
+                        </time>
+                        <div class="flex-none rounded-full p-1 text-green-400 bg-green-400/10">
+                          <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
+                        </div>
+                        <div class="hidden text-white sm:block">Active</div>
                       </div>
-                      <div class="hidden text-white sm:block">Completed</div>
-                    </div>
-                  </td>
-                  <td class="hidden py-4 pl-0 pr-8 text-sm leading-6 text-gray-400 md:table-cell lg:pr-20">
-                    25s
-                  </td>
-                  <td class="hidden py-4 pl-0 pr-4 text-right text-sm leading-6 text-gray-400 sm:table-cell sm:pr-6 lg:pr-8">
-                    <time dateTime="2023-01-23T11:00">45 minutes ago</time>
-                  </td>
-                </tr>
+                    </td>
+                    <td class="hidden py-4 pl-0 pr-8 text-sm leading-6 text-gray-400 md:table-cell lg:pr-20">
+                      25s
+                    </td>
+                    <td class="hidden py-4 pl-0 pr-4 text-right text-sm leading-6 text-gray-400 sm:table-cell sm:pr-6 lg:pr-8">
+                      <time dateTime="2023-01-23T11:00">45 minutes ago</time>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
