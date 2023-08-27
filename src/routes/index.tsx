@@ -1,5 +1,8 @@
 import { component$ } from "@builder.io/qwik";
 import { routeLoader$, type DocumentHead } from "@builder.io/qwik-city";
+import { pbkdf2 } from "crypto";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
 // import Counter from "~/components/starter/counter/counter";
 // import Hero from "~/components/starter/hero/hero";
@@ -31,7 +34,13 @@ export const getFetchDetails = (
 
 type Data = {
   number_of_registered_users: number;
-  emails: string[];
+  user_data: UserData[];
+};
+
+type UserData = {
+  email: string;
+  created_at?: string;
+  latest_login?: string;
 };
 
 export const useGetData = routeLoader$<Data>(async ({ env, cookie, query }) => {
@@ -51,6 +60,7 @@ export const useGetData = routeLoader$<Data>(async ({ env, cookie, query }) => {
 });
 
 export default component$(() => {
+  dayjs.extend(relativeTime);
   const data = useGetData();
   return (
     <div>
@@ -661,66 +671,89 @@ export default component$(() => {
                   </th>
                   <th
                     scope="col"
-                    class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20"
+                    class="font-mono py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20"
                   >
                     Status
                   </th>
                   <th
                     scope="col"
-                    class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20"
+                    class="font-mono hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20"
                   >
-                    Duration
+                    Registered
                   </th>
                   <th
                     scope="col"
-                    class="hidden py-2 pl-0 pr-4 text-right font-semibold sm:table-cell sm:pr-6 lg:pr-8"
+                    class="font-mono hidden py-2 pl-0 pr-4 text-right font-semibold sm:table-cell sm:pr-6 lg:pr-8"
                   >
-                    Deployed at
+                    Latest Login
                   </th>
                 </tr>
               </thead>
               <tbody class="font-mono divide-y divide-white/5">
-                {data.value.emails.map((email) => (
-                  <tr key={email}>
-                    <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
-                      <div class="flex items-center gap-x-4">
-                        <div class="truncate text-sm font-medium leading-6 text-white">
-                          {email}
+                {data.value.user_data.map((user) => {
+                  return (
+                    <tr key={user.email}>
+                      <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
+                        <div class="flex items-center gap-x-4">
+                          <div class="truncate text-sm font-medium leading-6 text-white">
+                            {user.email}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
-                      <div class="flex gap-x-3">
-                        <div class="font-mono text-sm leading-6 text-gray-400">
-                          2d89f0c8
+                      </td>
+                      <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
+                        <div class="flex gap-x-3">
+                          <div class="font-mono text-sm leading-6 text-gray-400">
+                            2d89f0c8
+                          </div>
+                          <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-400/20">
+                            main
+                          </span>
                         </div>
-                        <span class="inline-flex items-center rounded-md bg-gray-400/10 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-400/20">
-                          main
-                        </span>
-                      </div>
-                    </td>
-                    <td class="py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20">
-                      <div class="flex items-center justify-end gap-x-2 sm:justify-start">
-                        <time
-                          class="text-gray-400 sm:hidden"
-                          dateTime="2023-01-23T11:00"
-                        >
-                          45 minutes ago
+                      </td>
+                      <td class="py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20">
+                        <div class="flex items-center justify-end gap-x-2 sm:justify-start">
+                          <time
+                            class="text-gray-400 sm:hidden"
+                            dateTime="2023-01-23T11:00"
+                          >
+                            {dayjs(user.latest_login).fromNow()}
+                          </time>
+                          {dayjs(user.latest_login).diff(
+                            new Date(),
+                            "w",
+                            true,
+                          ) < 2 ? (
+                            <>
+                              <div class="flex-none rounded-full p-1 text-green-400 bg-green-400/10">
+                                <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
+                              </div>
+                              <div class="hidden text-white sm:block">
+                                Active
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div class="flex-none rounded-full p-1 text-yellow-400 bg-yellow-400/10">
+                                <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
+                              </div>
+                              <div class="hidden text-white sm:block">
+                                Inactive
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td class="hidden py-4 pl-0 pr-8 text-sm leading-6 text-gray-400 md:table-cell lg:pr-20">
+                        {dayjs(user.created_at).format("MMM D, YYYY")}
+                      </td>
+                      <td class="hidden py-4 pl-0 pr-4 text-right text-sm leading-6 text-gray-400 sm:table-cell sm:pr-6 lg:pr-8">
+                        <time dateTime="2023-01-23T11:00">
+                          {dayjs(user.latest_login).fromNow()}
                         </time>
-                        <div class="flex-none rounded-full p-1 text-green-400 bg-green-400/10">
-                          <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
-                        </div>
-                        <div class="hidden text-white sm:block">Active</div>
-                      </div>
-                    </td>
-                    <td class="hidden py-4 pl-0 pr-8 text-sm leading-6 text-gray-400 md:table-cell lg:pr-20">
-                      25s
-                    </td>
-                    <td class="hidden py-4 pl-0 pr-4 text-right text-sm leading-6 text-gray-400 sm:table-cell sm:pr-6 lg:pr-8">
-                      <time dateTime="2023-01-23T11:00">45 minutes ago</time>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
